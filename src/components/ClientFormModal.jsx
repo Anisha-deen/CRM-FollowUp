@@ -6,13 +6,14 @@ import {
     DialogActions,
     Button,
     TextField,
-    Grid,
     MenuItem,
     InputAdornment,
     Typography,
     Box,
-    IconButton
+    IconButton,
+    useTheme
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
     Person as PersonIcon,
     CalendarToday as CalendarIcon,
@@ -23,20 +24,21 @@ import {
 } from '@mui/icons-material';
 
 const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, mode }) => {
+    const theme = useTheme();
+    const fileInputRef = useRef(null);
+
     const [formData, setFormData] = useState({
         lead_id: '',
         contract_file: '',
         start_date: new Date().toISOString().split('T')[0]
     });
 
-    const fileInputRef = useRef(null);
-
     useEffect(() => {
         if (open) {
             if (mode === 'edit' && initialData) {
                 setFormData({
                     lead_id: initialData.lead_id,
-                    contract_file: initialData.contract_file || 'Financial_Report.pdf', // Default mock for demo
+                    contract_file: initialData.contract_file || 'Financial_Report.pdf',
                     start_date: initialData.start_date
                 });
             } else {
@@ -73,7 +75,7 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
         }
     };
 
-    // Filter available leads logic (kept same as before)
+    // Filter available leads logic
     const availableLeads = leads.filter(lead => {
         const isClient = clients.some(c => c.lead_id === lead.id);
         if (mode === 'edit' && initialData) {
@@ -82,161 +84,162 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
         return !isClient;
     });
 
+    // Card wrapper for inputs
+    const InputCard = ({ label, icon, children, onClick, sx }) => (
+        <Box
+            onClick={onClick}
+            sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+                p: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: '12px',
+                bgcolor: 'background.paper',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                cursor: onClick ? 'pointer' : 'default',
+                '&:hover': {
+                    borderColor: theme.palette.primary.main,
+                    boxShadow: '0 4px 12px rgba(61, 82, 160, 0.08)'
+                },
+                ...sx
+            }}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{
+                    color: theme.palette.primary.main,
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    p: 0.5,
+                    borderRadius: '6px'
+                }}>
+                    {React.cloneElement(icon, { fontSize: 'small' })}
+                </Box>
+                <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {label}
+                </Typography>
+            </Box>
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                {children}
+            </Box>
+        </Box>
+    );
+
     return (
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
             PaperProps={{
-                sx: { borderRadius: 2 }
+                sx: {
+                    borderRadius: '16px',
+                    width: '100%',
+                    maxWidth: '840px',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.2)',
+                    overflow: 'hidden'
+                }
             }}
         >
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PersonIcon sx={{ color: mode === 'add' ? 'success.main' : 'primary.main' }} />
-                    <Typography variant="h6" fontWeight={700}>
-                        {mode === 'add' ? 'Add New Client' : 'Edit Client'}
-                    </Typography>
-                </Box>
-                <IconButton onClick={onClose} size="small">
+            <DialogTitle sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                px: 4,
+                py: 2.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.paper'
+            }}>
+                <Typography variant="h5" fontWeight={700} sx={{ fontFamily: 'Montserrat', color: '#0f172a' }}>
+                    {mode === 'add' ? 'Add New Client' : 'Edit Client'}
+                </Typography>
+                <IconButton onClick={onClose} size="small" sx={{ bgcolor: 'action.hover' }}>
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers sx={{ borderTop: '1px solid #eee', borderBottom: 'none' }}>
-                <Grid container spacing={3}>
-                    {/* CLIENT INFORMATION SECTION */}
-                    <Grid item xs={12}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 0.5, mb: 2, display: 'block' }}>
-                            CLIENT INFORMATION
-                        </Typography>
+            <DialogContent dividers sx={{ p: 4, bgcolor: '#f8f9fc' }}>
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gridTemplateRows: { md: 'auto' },
+                    gap: 3
+                }}>
 
-                        <Grid container spacing={2}>
-                            <Grid item xs={12}>
-                                <TextField
-                                    select
-                                    fullWidth
-                                    label={mode === 'add' ? "Select Lead *" : "Selected Lead"}
-                                    name="lead_id"
-                                    value={formData.lead_id}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={mode === 'edit'}
-                                    SelectProps={{
-                                        displayEmpty: true,
-                                        renderValue: (selected) => {
-                                            if (!selected) {
-                                                return <Typography color="text.secondary">Search by name or company...</Typography>;
-                                            }
-                                            const lead = leads.find(l => l.id === selected);
-                                            return lead ? `${lead.client_name} - ${lead.company}` : selected;
-                                        }
-                                    }}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start">
-                                                <BusinessIcon color="action" />
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                    sx={{ mb: 2 }}
-                                >
-                                    {availableLeads.length > 0 ? (
-                                        availableLeads.map((lead) => (
-                                            <MenuItem key={lead.id} value={lead.id}>
-                                                {lead.client_name} - {lead.company} ({lead.status})
-                                            </MenuItem>
-                                        ))
-                                    ) : (
-                                        <MenuItem disabled value="">
-                                            No available leads
-                                        </MenuItem>
-                                    )}
-                                </TextField>
-                            </Grid>
-
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    type="date"
-                                    label="Contract Start Date *"
-                                    name="start_date"
-                                    value={formData.start_date}
-                                    onChange={handleChange}
-                                    required
-                                    InputLabelProps={{ shrink: true }}
-                                    InputProps={{
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                <CalendarIcon color="action" />
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                />
-                            </Grid>
-                        </Grid>
-                    </Grid>
-
-                    {/* CONTRACT DOCUMENT SECTION */}
-                    <Grid item xs={12}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 0.5, mb: 1, display: 'block', mt: 1 }}>
-                            CONTRACT DOCUMENT
-                        </Typography>
-
-                        <Box
-                            onClick={handleFileClick}
-                            sx={{
-                                border: '2px dashed #e0e0e0',
-                                borderRadius: 2,
-                                p: 4,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                transition: 'border-color 0.2s',
-                                '&:hover': {
-                                    borderColor: 'primary.main',
-                                    bgcolor: 'rgba(0,0,0,0.01)'
+                    {/* Row 1 Col 1: Select Lead */}
+                    <InputCard label="Select Lead" icon={<PersonIcon />}>
+                        <TextField
+                            select
+                            fullWidth
+                            name="lead_id"
+                            value={formData.lead_id}
+                            onChange={handleChange}
+                            disabled={mode === 'edit'}
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                            SelectProps={{
+                                displayEmpty: true,
+                                renderValue: (selected) => {
+                                    if (!selected) return <Typography color="text.secondary">Select lead...</Typography>;
+                                    const lead = leads.find(l => l.id === selected);
+                                    return lead ? `${lead.client_name}` : selected;
                                 }
                             }}
                         >
-                            <input
-                                type="file"
-                                hidden
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                            />
+                            {availableLeads.map((lead) => (
+                                <MenuItem key={lead.id} value={lead.id}>
+                                    {lead.client_name} - {lead.company}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </InputCard>
 
-                            {formData.contract_file ? (
-                                <>
-                                    <FileIcon color="primary" sx={{ fontSize: 40, mb: 1 }} />
-                                    <Typography variant="subtitle1" fontWeight={600}>
-                                        {formData.contract_file}
-                                    </Typography>
-                                    <Typography variant="body2" color="primary">
-                                        Click to replace file
-                                    </Typography>
-                                </>
-                            ) : (
-                                <>
-                                    <CloudUploadIcon color="action" sx={{ fontSize: 40, mb: 1 }} />
-                                    <Typography variant="body1" fontWeight={600} sx={{ mt: 1 }}>
-                                        Click to upload Contract
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        PDF, PNG, or JPG (Max 5MB)
-                                    </Typography>
-                                </>
-                            )}
+                    {/* Row 1 Col 2: Contract Start Date */}
+                    <InputCard label="Contract Start Date" icon={<CalendarIcon />}>
+                        <TextField
+                            fullWidth
+                            type="date"
+                            name="start_date"
+                            value={formData.start_date}
+                            onChange={handleChange}
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
+
+                    {/* Row 2 Col 1: Upload Contract */}
+                    <InputCard
+                        label="Upload Contract"
+                        icon={<CloudUploadIcon />}
+                        onClick={handleFileClick}
+                        sx={{
+                            '&:hover': { borderColor: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.02) }
+                        }}
+                    >
+                        <input
+                            type="file"
+                            hidden
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, height: '48px', px: 1 }}>
+                            <Typography variant="body2" color={formData.contract_file ? 'text.primary' : 'text.secondary'} noWrap>
+                                {formData.contract_file || "Click to upload file..."}
+                            </Typography>
+                            {formData.contract_file && <FileIcon color="primary" fontSize="small" />}
                         </Box>
-                    </Grid>
-                </Grid>
+                    </InputCard>
+
+                </Box>
             </DialogContent>
 
-            <DialogActions sx={{ p: 2, pt: 0 }}>
-                <Button onClick={onClose} color="inherit" sx={{ textTransform: 'none' }}>
+            <DialogActions sx={{ p: 3, px: 4, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Button onClick={onClose} color="inherit" variant="outlined" sx={{ borderRadius: '8px', textTransform: 'none', px: 3, height: 44, borderColor: 'divider' }}>
                     Cancel
                 </Button>
                 <Button
@@ -244,10 +247,13 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
                     variant="contained"
                     disableElevation
                     sx={{
+                        borderRadius: '8px',
+                        px: 4,
+                        height: 44,
+                        bgcolor: theme.palette.primary.main,
                         textTransform: 'none',
-                        px: 3,
-                        bgcolor: '#3B82F6',
-                        '&:hover': { bgcolor: '#2563EB' }
+                        fontWeight: 600,
+                        '&:hover': { bgcolor: theme.palette.primary.dark }
                     }}
                 >
                     {mode === 'add' ? 'Add Client' : 'Update Client'}

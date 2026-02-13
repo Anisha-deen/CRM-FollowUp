@@ -8,19 +8,36 @@ import {
     TextField,
     MenuItem,
     Grid,
-    Box
+    Box,
+    Typography,
+    useTheme,
+    IconButton
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import CloseIcon from '@mui/icons-material/Close';
+import PersonIcon from '@mui/icons-material/Person';
+import CategoryIcon from '@mui/icons-material/Category';
+import EventIcon from '@mui/icons-material/Event';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import NotesIcon from '@mui/icons-material/Notes';
 
 const FollowupModal = ({ open, onClose, onSave, followup }) => {
-    const [formData, setFormData] = useState({
+    const theme = useTheme();
+
+    // Initial blank state
+    const initialState = {
         lead_name: '',
         type: 'Call',
-        date: '',
+        date: new Date().toISOString().split('T')[0],
         time: '',
         status: 'Pending',
         assigned_to: '',
         outcome: ''
-    });
+    };
+
+    const [formData, setFormData] = useState(initialState);
 
     useEffect(() => {
         if (followup) {
@@ -33,16 +50,9 @@ const FollowupModal = ({ open, onClose, onSave, followup }) => {
                 assigned_to: followup.assigned_to || '',
                 outcome: followup.outcome || ''
             });
-        } else {
-            setFormData({
-                lead_name: '',
-                type: 'Call',
-                date: new Date().toISOString().split('T')[0],
-                time: '',
-                status: 'Pending',
-                assigned_to: '',
-                outcome: ''
-            });
+        } else if (open) {
+            // Reset to default new state when opening fresh
+            setFormData(initialState);
         }
     }, [followup, open]);
 
@@ -58,117 +68,234 @@ const FollowupModal = ({ open, onClose, onSave, followup }) => {
         onSave(formData);
     };
 
+    // Card wrapper for inputs
+    const InputCard = ({ label, icon, children }) => (
+        <Box sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+            p: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '12px',
+            bgcolor: 'background.paper',
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+            '&:hover': {
+                borderColor: theme.palette.primary.main,
+                boxShadow: '0 4px 12px rgba(61, 82, 160, 0.08)'
+            }
+        }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{
+                    color: theme.palette.primary.main,
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    p: 0.5,
+                    borderRadius: '6px'
+                }}>
+                    {icon}
+                </Box>
+                <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {label}
+                </Typography>
+            </Box>
+            <Box sx={{ flexGrow: 1 }}>
+                {children}
+            </Box>
+        </Box>
+    );
+
     return (
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
+            PaperProps={{
+                sx: {
+                    borderRadius: '16px',
+                    width: '100%',
+                    maxWidth: '820px',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.2)'
+                }
+            }}
         >
-            <DialogTitle sx={{ fontWeight: 700 }}>
+            <DialogTitle sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                px: 4,
+                py: 2.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
+                fontFamily: 'Montserrat',
+                fontWeight: 700,
+                fontSize: '24px'
+            }}>
                 {followup ? 'Edit Follow-up' : 'New Follow-up'}
+                <IconButton onClick={onClose} size="small" sx={{ bgcolor: 'action.hover' }}>
+                    <CloseIcon />
+                </IconButton>
             </DialogTitle>
-            <DialogContent dividers>
-                <Grid container spacing={2}>
-                    <Grid item xs={12}>
+
+            <DialogContent dividers sx={{ p: 4, bgcolor: '#f8f9fc' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+
+                    {/* Row 1 */}
+                    <InputCard label="Lead Name" icon={<PersonIcon fontSize="small" />}>
                         <TextField
                             fullWidth
-                            label="Lead Name"
+                            variant="outlined"
                             name="lead_name"
                             value={formData.lead_name}
                             onChange={handleChange}
-                            variant="outlined"
+                            placeholder="Enter lead name"
+                            size="small"
                         />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </InputCard>
+
+                    <InputCard label="Type" icon={<CategoryIcon fontSize="small" />}>
                         <TextField
                             select
                             fullWidth
-                            label="Type"
+                            variant="outlined"
                             name="type"
                             value={formData.type}
                             onChange={handleChange}
-                            variant="outlined"
+                            size="small"
                         >
                             <MenuItem value="Call">Call</MenuItem>
                             <MenuItem value="Email">Email</MenuItem>
                             <MenuItem value="Meeting">Meeting</MenuItem>
                         </TextField>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </InputCard>
+
+                    {/* Row 2 */}
+                    <InputCard label="Status" icon={<AssignmentTurnedInIcon fontSize="small" />}>
                         <TextField
                             select
                             fullWidth
-                            label="Status"
+                            variant="outlined"
                             name="status"
                             value={formData.status}
                             onChange={handleChange}
-                            variant="outlined"
+                            size="small"
                         >
                             <MenuItem value="Pending">Pending</MenuItem>
                             <MenuItem value="Completed">Completed</MenuItem>
                             <MenuItem value="Missed">Missed</MenuItem>
                             <MenuItem value="Scheduled">Scheduled</MenuItem>
                         </TextField>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </InputCard>
+
+                    <InputCard label="Assigned To" icon={<AssignmentIndIcon fontSize="small" />}>
                         <TextField
                             fullWidth
-                            type="date"
-                            label="Date"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleChange}
-                            InputLabelProps={{ shrink: true }}
                             variant="outlined"
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            type="time"
-                            label="Time"
-                            name="time"
-                            value={formData.time}
-                            onChange={handleChange}
-                            InputLabelProps={{ shrink: true }}
-                            variant="outlined"
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            fullWidth
-                            label="Assigned To"
                             name="assigned_to"
                             value={formData.assigned_to}
                             onChange={handleChange}
-                            variant="outlined"
+                            placeholder="Assign to user"
+                            size="small"
                         />
-                    </Grid>
-                    <Grid item xs={12}>
+                    </InputCard>
+
+                    {/* Row 3 */}
+                    <InputCard label="Date" icon={<EventIcon fontSize="small" />}>
                         <TextField
                             fullWidth
-                            multiline
-                            rows={3}
-                            label="Outcome / Notes"
-                            name="outcome"
-                            value={formData.outcome}
-                            onChange={handleChange}
+                            type="date"
                             variant="outlined"
+                            name="date"
+                            value={formData.date}
+                            onChange={handleChange}
+                            size="small"
                         />
-                    </Grid>
-                </Grid>
+                    </InputCard>
+
+                    <InputCard label="Time" icon={<AccessTimeIcon fontSize="small" />}>
+                        <TextField
+                            fullWidth
+                            type="time"
+                            variant="outlined"
+                            name="time"
+                            value={formData.time}
+                            onChange={handleChange}
+                            size="small"
+                        />
+                    </InputCard>
+
+                    {/* Row 4 - Full Width */}
+                    <Box sx={{ gridColumn: { md: '1 / -1' } }}>
+                        <InputCard label="Outcome / Notes" icon={<NotesIcon fontSize="small" />}>
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={3}
+                                variant="outlined"
+                                name="outcome"
+                                value={formData.outcome}
+                                onChange={handleChange}
+                                placeholder="Enter outcome details or notes..."
+                            />
+                        </InputCard>
+                    </Box>
+
+                </Box>
             </DialogContent>
-            <DialogActions sx={{ p: 2.5 }}>
-                <Button onClick={onClose} color="inherit">
+
+            <DialogActions sx={{
+                p: 2,
+                px: 3,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 2
+            }}>
+                <Button
+                    onClick={onClose}
+                    variant="outlined"
+                    sx={{
+                        borderRadius: '8px',
+                        textTransform: 'none',
+                        borderColor: '#D0D5DD',
+                        color: '#344054',
+                        height: 44,
+                        px: 2.5,
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        '&:hover': {
+                            borderColor: '#D0D5DD',
+                            bgcolor: 'rgba(52, 64, 84, 0.04)'
+                        }
+                    }}
+                >
                     Cancel
                 </Button>
                 <Button
                     onClick={handleSubmit}
                     variant="contained"
-                    color="primary"
+                    disableElevation
+                    sx={{
+                        borderRadius: '8px',
+                        bgcolor: '#3D52A0',
+                        textTransform: 'none',
+                        fontFamily: 'Montserrat',
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        height: 44,
+                        px: 2.5,
+                        whiteSpace: 'nowrap',
+                        '&:hover': { bgcolor: '#334485' }
+                    }}
                 >
-                    Save
+                    Save Follow-up
                 </Button>
             </DialogActions>
         </Dialog>

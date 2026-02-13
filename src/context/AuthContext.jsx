@@ -50,8 +50,16 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateProfile = (updatedData) => {
+        if (!user) return;
+        const newUser = { ...user, ...updatedData };
+        setUser(newUser);
+        localStorage.setItem('crm_user', JSON.stringify(newUser));
+        return true;
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, switchRole, hasPermission }}>
+        <AuthContext.Provider value={{ user, login, logout, switchRole, hasPermission, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );
