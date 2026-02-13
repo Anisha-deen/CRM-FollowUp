@@ -86,7 +86,8 @@ const Roles = () => {
         return saved ? JSON.parse(saved) : DEFAULT_ROLES;
     });
 
-    const [openAddModal, setOpenAddModal] = useState(false);
+    const [openRoleModal, setOpenRoleModal] = useState(false);
+    const [editRole, setEditRole] = useState(null);
     const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
     const [roleToDelete, setRoleToDelete] = useState(null);
 
@@ -95,13 +96,34 @@ const Roles = () => {
         localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
     }, [roles]);
 
-    const handleAddRole = (newRoleData) => {
-        const newRole = {
-            id: Date.now(),
-            ...newRoleData,
-            isSystem: false
-        };
-        setRoles([...roles, newRole]);
+    // Handle Add or Update Role
+    const handleSaveRole = (roleData) => {
+        if (roleData.id) {
+            // Update existing role
+            setRoles(prevRoles => prevRoles.map(role =>
+                role.id === roleData.id ? { ...role, ...roleData } : role
+            ));
+        } else {
+            // Add new role
+            const newRole = {
+                id: Date.now(),
+                ...roleData,
+                isSystem: false
+            };
+            setRoles([...roles, newRole]);
+        }
+        setOpenRoleModal(false);
+        setEditRole(null);
+    };
+
+    const handleAddClick = () => {
+        setEditRole(null);
+        setOpenRoleModal(true);
+    };
+
+    const handleEditClick = (role) => {
+        setEditRole(role);
+        setOpenRoleModal(true);
     };
 
     const handleDeleteClick = (role) => {
@@ -126,7 +148,7 @@ const Roles = () => {
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
-                    onClick={() => setOpenAddModal(true)}
+                    onClick={handleAddClick}
                     sx={{
                         backgroundColor: '#3D52A0',
                         color: 'white',
@@ -251,6 +273,7 @@ const Roles = () => {
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                                                 <IconButton
                                                     size="small"
+                                                    onClick={() => handleEditClick(role)}
                                                     sx={{
                                                         color: 'action.active',
                                                         '&:hover': { color: theme.palette.primary.main, bgcolor: alpha(theme.palette.primary.main, 0.1) }
@@ -286,9 +309,10 @@ const Roles = () => {
             </DataTableCard>
 
             <AddRoleModal
-                open={openAddModal}
-                onClose={() => setOpenAddModal(false)}
-                onSave={handleAddRole}
+                open={openRoleModal}
+                roleToEdit={editRole}
+                onClose={() => setOpenRoleModal(false)}
+                onSave={handleSaveRole}
             />
 
             {/* Simple Confirmation Dialog if not using the shared one, but let's try to assume it exists or use inline */}
