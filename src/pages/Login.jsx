@@ -11,9 +11,9 @@ import {
     FormControlLabel,
     Paper,
     useTheme,
-    Fade,
-    alpha
+    Fade
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import {
     Visibility,
     VisibilityOff,

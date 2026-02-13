@@ -6,18 +6,27 @@ import {
     DialogActions,
     TextField,
     Button,
-    Grid,
     FormControl,
     InputLabel,
     Select,
     MenuItem,
-    FormControlLabel,
     Switch,
-    FormHelperText,
-    Box, 
+    Box,
     useTheme,
-    useMediaQuery
+    useMediaQuery,
+    Typography,
+    IconButton
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+    Person as PersonIcon,
+    Email as EmailIcon,
+    Lock as LockIcon,
+    Security as RoleIcon,
+    ToggleOn as StatusIcon,
+    Close as CloseIcon
+} from '@mui/icons-material';
+
 const ROLES = [
     'Super Admin',
     'Admin',
@@ -27,6 +36,9 @@ const ROLES = [
 ];
 
 const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -34,8 +46,7 @@ const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
         role: '',
         status: 'Active'
     });
-    const theme = useTheme();
-const ismobile = useMediaQuery(theme.breakpoints.down('sm'));
+
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
@@ -96,113 +107,194 @@ const ismobile = useMediaQuery(theme.breakpoints.down('sm'));
         }
     };
 
+    // Card wrapper for inputs
+    const InputCard = ({ label, icon, children, sx }) => (
+        <Box
+            sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+                p: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: '12px',
+                bgcolor: 'background.paper',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                '&:hover': {
+                    borderColor: theme.palette.primary.main,
+                    boxShadow: '0 4px 12px rgba(61, 82, 160, 0.08)'
+                },
+                ...sx
+            }}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{
+                    color: theme.palette.primary.main,
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    p: 0.5,
+                    borderRadius: '6px'
+                }}>
+                    {React.cloneElement(icon, { fontSize: 'small' })}
+                </Box>
+                <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {label}
+                </Typography>
+            </Box>
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                {children}
+            </Box>
+        </Box>
+    );
+
     return (
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
+            PaperProps={{
+                sx: {
+                    borderRadius: '16px',
+                    width: '100%',
+                    maxWidth: '840px',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.2)',
+                    overflow: 'hidden'
+                }
+            }}
         >
-            <DialogTitle sx={{ fontWeight: 700 }}>
-                {mode === 'add' ? 'Add New User' : 'Edit User'}
+            <DialogTitle sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                px: 4,
+                py: 2.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.paper'
+            }}>
+                <Typography variant="h5" fontWeight={700} sx={{ fontFamily: 'Montserrat', color: '#0f172a' }}>
+                    {mode === 'add' ? 'Add New User' : 'Edit User'}
+                </Typography>
+                <IconButton onClick={onClose} size="small" sx={{ bgcolor: 'action.hover' }}>
+                    <CloseIcon />
+                </IconButton>
             </DialogTitle>
-            <DialogContent dividers>
-                <Box component="form" noValidate sx={{ mt: 1 }}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
-                                label="Full Name"
-                                name="name"
-                                value={formData.name}
+
+            <DialogContent dividers sx={{ p: 4, bgcolor: '#f8f9fc' }}>
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gridTemplateRows: { md: 'repeat(3, 1fr)' }, // 3 equal rows on desktop
+                    gap: 3
+                }}>
+                    {/* Row 1 Col 1: Full Name */}
+                    <InputCard label="Full Name" icon={<PersonIcon />}>
+                        <TextField
+                            fullWidth
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            error={!!errors.name}
+                            helperText={errors.name}
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
+
+                    {/* Row 1 Col 2: Email Address */}
+                    <InputCard label="Email Address" icon={<EmailIcon />}>
+                        <TextField
+                            fullWidth
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            error={!!errors.email}
+                            helperText={errors.email}
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
+
+                    {/* Row 2 Col 1: Password */}
+                    <InputCard label="Password" icon={<LockIcon />}>
+                        <TextField
+                            fullWidth
+                            name="password"
+                            type="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            error={!!errors.password}
+                            helperText={errors.password}
+                            disabled={mode === 'edit'}
+                            placeholder={mode === 'edit' ? '(Unchanged)' : ''}
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
+
+                    {/* Row 2 Col 2: Role */}
+                    <InputCard label="Role" icon={<RoleIcon />}>
+                        <FormControl fullWidth error={!!errors.role}>
+                            <Select
+                                name="role"
+                                value={formData.role}
                                 onChange={handleChange}
-                                error={!!errors.name}
-                                helperText={errors.name}
-                                variant="outlined"
-                                required
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                fullWidth
-                                label="Email Address"
-                                name="email"
-                                type="email"
-                                value={formData.email}
+                                sx={{ height: '48px' }}
+                            >
+                                {ROLES.map((role) => (
+                                    <MenuItem key={role} value={role}>
+                                        {role}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </InputCard>
+
+                    {/* Row 3 Col 1: Status */}
+                    <InputCard label="User Status" icon={<StatusIcon />}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', height: '48px' }}>
+                            <Switch
+                                checked={formData.status === 'Active'}
                                 onChange={handleChange}
-                                error={!!errors.email}
-                                helperText={errors.email}
-                                variant="outlined"
-                                required
+                                name="status"
+                                color="success"
                             />
-                        </Grid>
+                            <Typography variant="body1" fontWeight={500} sx={{ ml: 1 }}>
+                                {formData.status}
+                            </Typography>
+                        </Box>
+                    </InputCard>
 
-                        {/* Password only required for Add mode */}
-                        {mode === 'add' && (
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label="Password"
-                                    name="password"
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    error={!!errors.password}
-                                    helperText={errors.password}
-                                    variant="outlined"
-                                    required
-                                />
-                            </Grid>
-                        )}
+                    {/* Row 3 Col 2: Placeholder (Empty) */}
+                    <InputCard label="" icon={<Box />} sx={{ opacity: 0, pointerEvents: 'none', display: { xs: 'none', md: 'flex' } }}>
+                        {/* Empty card to maintain grid alignment */}
+                    </InputCard>
 
-                        <Grid item xs={12} sm={6} width={ismobile?"100%":"44%"}>
-                            <FormControl fullWidth error={!!errors.role} required>
-                                <InputLabel id="role-select-label">Role</InputLabel>
-                                <Select
-                                    labelId="role-select-label"
-                                    name="role"
-                                    value={formData.role}
-                                    label="Role"
-                                    onChange={handleChange}
-                                >
-                                    {ROLES.map((role) => (
-                                        <MenuItem key={role} value={role}>
-                                            {role}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                                {errors.role && <FormHelperText>{errors.role}</FormHelperText>}
-                            </FormControl>
-                        </Grid>
-
-                        <Grid item xs={12} sx={{ mt: 1 }}>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={formData.status === 'Active'}
-                                        onChange={handleChange}
-                                        name="status"
-                                        color="success"
-                                    />
-                                }
-                                label="Active"
-                                sx={{ ml: 1 }}
-                            />
-                        </Grid>
-                    </Grid>
                 </Box>
             </DialogContent>
-            <DialogActions sx={{ p: 2.5 }}>
-                <Button
-                    onClick={onClose}
-                    color="inherit"
-                >
+
+            <DialogActions sx={{ p: 3, px: 4, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Button onClick={onClose} color="inherit" variant="outlined" sx={{ borderRadius: '8px', textTransform: 'none', px: 3, height: 44, borderColor: 'divider' }}>
                     Cancel
                 </Button>
                 <Button
                     onClick={handleSubmit}
                     variant="contained"
-                    color="primary"
+                    disableElevation
+                    sx={{
+                        borderRadius: '8px',
+                        px: 4,
+                        height: 44,
+                        bgcolor: theme.palette.primary.main,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&:hover': { bgcolor: theme.palette.primary.dark }
+                    }}
                 >
                     Save User
                 </Button>

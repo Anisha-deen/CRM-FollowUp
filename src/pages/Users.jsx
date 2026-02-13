@@ -16,9 +16,9 @@ import {
     useTheme,
     useMediaQuery,
     Grid,
-    Paper,
-    alpha
+    Paper
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
     Add as AddIcon,
     Edit as EditIcon,

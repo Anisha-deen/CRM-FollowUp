@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import BudgetPage from './pages/BudgetPage';
 import Clients from './pages/Clients';
 import Users from './pages/Users';
+import Organization from './pages/Organization';
 import Roles from './pages/Roles';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -40,6 +41,7 @@ function App() {
             <Route path="budgets" element={<BudgetPage />} />
             <Route path="clients" element={<Clients />} />
             <Route path="users" element={<Users />} />
+            <Route path="organization" element={<Organization />} />
             <Route path="roles" element={<Roles />} />
           </Route>
         </Routes>

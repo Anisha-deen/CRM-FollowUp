@@ -27,6 +27,7 @@ import leadsData from '../data/leads.json';
 import ClientFormModal from '../components/ClientFormModal';
 import ClientDetailsModal from '../components/ClientDetailsModal';
 import LoadingSpinner from '../components/LoadingSpinner';
+import PageContainer from '../components/PageContainer';
 
 // --- CURRENT USER SIMULATION (CHANGE THIS TO TEST DIFFERENT ROLES) ---
 const currentUser = {
@@ -212,157 +213,144 @@ const Clients = () => {
         );
     }
 
+    if (loading) {
+        return (
+            <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', height: '100vh', alignItems: 'center' }}>
+                <LoadingSpinner loading={true} mode="centered" message="Loading Clients..." />
+            </Box>
+        );
+    }
+
     return (
         <>
-            <Box sx={{
-                p: { xs: 2, sm: 3 },
-                minHeight: 'calc(100vh - 64px)',
-                display: loading ? 'flex' : 'block',
-                justifyContent: loading ? 'center' : 'unset',
-                alignItems: loading ? 'center' : 'unset'
-            }}>
-                {loading ? (
-                    <LoadingSpinner loading={true} mode="centered" message="Loading Clients..." />
-                ) : (
-                    <>
-
-                        <Box sx={{
-                            display: 'flex',
-                            flexDirection: { xs: 'column', sm: 'row' },
-                            justifyContent: 'space-between',
-                            alignItems: { xs: 'flex-start', sm: 'center' },
-                            gap: 2,
-                            mb: 3
-                        }}>
-                            <Typography variant="h4" fontWeight={700}>
-                                Clients Management
-                            </Typography>
-                            {canManage && (
-                                <Button
-                                    variant="contained"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => handleOpenDialog('add')}
-                                    sx={{ width: { xs: '100%', sm: 'auto' } }} // Full width button on mobile
-                                >
-                                    Add Client
-                                </Button>
-                            )}
-                        </Box>
-
-                        <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-                            <Table sx={{ minWidth: { xs: 800, md: 'auto' } }}>
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: 'grey.100' }}>
-                                        <TableCell sx={{ fontWeight: 600 }}>Client Name</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Phone</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Company</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Contract File</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Start Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {joinedClients
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((client) => (
-                                            <TableRow key={client.id} hover>
-                                                <TableCell>{client.client_name}</TableCell>
-                                                <TableCell>{client.email}</TableCell>
-                                                <TableCell>{client.phone}</TableCell>
-                                                <TableCell>{client.company}</TableCell>
-                                                <TableCell>{client.contract_file}</TableCell>
-                                                <TableCell>{client.start_date}</TableCell>
-                                                <TableCell>
-                                                    <Chip
-                                                        label={client.lead_status}
-                                                        size="small"
-                                                        color={client.lead_status === 'Closed Won' ? 'success' : 'default'}
-                                                        sx={{
-                                                            fontWeight: 600,
-                                                            borderRadius: '6px',
-                                                            fontSize: '0.75rem',
-                                                            minWidth: '100px',
-                                                            justifyContent: 'center'
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Box sx={{ display: 'flex' }}>
+            <PageContainer
+                title="Clients Management"
+                subtitle="Manage your clients, contracts, and project relationships."
+                action={
+                    canManage && (
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={() => handleOpenDialog('add')}
+                            sx={{ width: { xs: '100%', sm: 'auto' } }}
+                        >
+                            Add Client
+                        </Button>
+                    )
+                }
+            >
+                <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+                    <Table sx={{ minWidth: { xs: 800, md: 'auto' } }}>
+                        <TableHead>
+                            <TableRow sx={{ bgcolor: 'grey.100' }}>
+                                <TableCell sx={{ fontWeight: 600 }}>Client Name</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Phone</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Company</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Contract File</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Start Date</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {joinedClients
+                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                .map((client) => (
+                                    <TableRow key={client.id} hover>
+                                        <TableCell>{client.client_name}</TableCell>
+                                        <TableCell>{client.email}</TableCell>
+                                        <TableCell>{client.phone}</TableCell>
+                                        <TableCell>{client.company}</TableCell>
+                                        <TableCell>{client.contract_file}</TableCell>
+                                        <TableCell>{client.start_date}</TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={client.lead_status}
+                                                size="small"
+                                                color={client.lead_status === 'Closed Won' ? 'success' : 'default'}
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.75rem',
+                                                    minWidth: '100px',
+                                                    justifyContent: 'center'
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex' }}>
+                                                <IconButton
+                                                    size="small"
+                                                    color="info"
+                                                    onClick={() => handleOpenView(client)}
+                                                >
+                                                    <ViewIcon fontSize="small" />
+                                                </IconButton>
+                                                {canManage ? (
+                                                    <>
                                                         <IconButton
                                                             size="small"
-                                                            color="info"
-                                                            onClick={() => handleOpenView(client)}
+                                                            color="primary"
+                                                            onClick={() => handleOpenDialog('edit', client)}
                                                         >
-                                                            <ViewIcon fontSize="small" />
+                                                            <EditIcon fontSize="small" />
                                                         </IconButton>
-                                                        {canManage ? (
-                                                            <>
-                                                                <IconButton
-                                                                    size="small"
-                                                                    color="primary"
-                                                                    onClick={() => handleOpenDialog('edit', client)}
-                                                                >
-                                                                    <EditIcon fontSize="small" />
-                                                                </IconButton>
-                                                                <IconButton
-                                                                    size="small"
-                                                                    color="error"
-                                                                    onClick={() => handleDelete(client.id)}
-                                                                >
-                                                                    <DeleteIcon fontSize="small" />
-                                                                </IconButton>
-                                                            </>
-                                                        ) : (
-                                                            <Typography variant="caption" color="textSecondary">View Only</Typography>
-                                                        )}
-                                                    </Box>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    {joinedClients.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={8} align="center">No clients found.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                        <TablePagination
-                            rowsPerPageOptions={[5, 10, 25]}
-                            component="div"
-                            count={joinedClients.length}
-                            rowsPerPage={rowsPerPage}
-                            page={page}
-                            onPageChange={handleChangePage}
-                            onRowsPerPageChange={handleChangeRowsPerPage}
-                        />
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={() => handleDelete(client.id)}
+                                                        >
+                                                            <DeleteIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </>
+                                                ) : (
+                                                    <Typography variant="caption" color="textSecondary">View Only</Typography>
+                                                )}
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            {joinedClients.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={8} align="center">No clients found.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+                <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={joinedClients.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                />
 
-                        {/* Client Form Modal */}
-                        <ClientFormModal
-                            open={openDialog}
-                            onClose={handleCloseDialog}
-                            onSave={handleSave}
-                            leads={leads}
-                            clients={clients}
-                            initialData={currentClient}
-                            mode={dialogMode}
-                        />
+                {/* Client Form Modal */}
+                <ClientFormModal
+                    open={openDialog}
+                    onClose={handleCloseDialog}
+                    onSave={handleSave}
+                    leads={leads}
+                    clients={clients}
+                    initialData={currentClient}
+                    mode={dialogMode}
+                />
 
-                        {/* Client Details Modal */}
-                        <ClientDetailsModal
-                            open={openViewDialog}
-                            onClose={handleCloseView}
-                            client={viewClient}
-                            onEdit={() => {
-                                handleCloseView();
-                                handleOpenDialog('edit', viewClient);
-                            }}
-                        />
-                    </>
-                )}
-            </Box>
+                {/* Client Details Modal */}
+                <ClientDetailsModal
+                    open={openViewDialog}
+                    onClose={handleCloseView}
+                    client={viewClient}
+                    onEdit={() => {
+                        handleCloseView();
+                        handleOpenDialog('edit', viewClient);
+                    }}
+                />
+            </PageContainer>
 
             <Snackbar
                 open={toast.open}

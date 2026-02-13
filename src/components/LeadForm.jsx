@@ -6,19 +6,16 @@ import {
     DialogActions,
     Button,
     TextField,
-    Grid,
     Typography,
     Box,
-    Divider,
     MenuItem,
-    Chip,
-    InputAdornment,
     FormControl,
-    InputLabel,
     Select,
     useTheme,
-    useMediaQuery
+    useMediaQuery,
+    IconButton
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
     Person as PersonIcon,
     Email as EmailIcon,
@@ -27,7 +24,9 @@ import {
     Label as LabelIcon,
     AssignmentInd as AssignedIcon,
     Notes as NotesIcon,
-    Close as CloseIcon
+    Close as CloseIcon,
+    Source as SourceIcon,
+    AssignmentTurnedIn as StatusIcon
 } from '@mui/icons-material';
 
 import leadsData from '../data/leads.json';
@@ -117,6 +116,46 @@ const LeadForm = ({ open, onClose, onSave, initialData, mode }) => {
         }
     };
 
+    // Card wrapper for inputs
+    const InputCard = ({ label, icon, children }) => (
+        <Box sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+            p: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '12px',
+            bgcolor: 'background.paper',
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+            '&:hover': {
+                borderColor: theme.palette.primary.main,
+                boxShadow: '0 4px 12px rgba(61, 82, 160, 0.08)'
+            }
+        }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{
+                    color: theme.palette.primary.main,
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    p: 0.5,
+                    borderRadius: '6px'
+                }}>
+                    {React.cloneElement(icon, { fontSize: 'small' })}
+                </Box>
+                <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {label}
+                </Typography>
+            </Box>
+            <Box sx={{ flexGrow: 1 }}>
+                {children}
+            </Box>
+        </Box>
+    );
+
     return (
         <Dialog
             open={open}
@@ -126,167 +165,173 @@ const LeadForm = ({ open, onClose, onSave, initialData, mode }) => {
             PaperProps={{
                 sx: {
                     borderRadius: '16px',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    width: '100%',
+                    maxWidth: '840px',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.2)',
                     overflow: 'hidden'
                 }
             }}
         >
             <DialogTitle sx={{
-                borderBottom: '1px solid #f1f5f9',
-                px: { xs: 2.5, md: 4 },
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                px: 4,
                 py: 2.5,
-                fontSize: '1.25rem',
-                fontWeight: 600,
-                color: '#0f172a'
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.paper'
             }}>
-                {mode === 'add' ? 'Add New Lead' : 'Edit Lead Details'}
+                <Typography variant="h5" fontWeight={700} sx={{ fontFamily: 'Montserrat', color: '#0f172a' }}>
+                    {mode === 'add' ? 'Add New Lead' : 'Edit Lead Details'}
+                </Typography>
+                <IconButton onClick={onClose} size="small" sx={{ bgcolor: 'action.hover' }}>
+                    <CloseIcon />
+                </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers>
-                <Box component="form" noValidate sx={{ mt: 1 }}>
-                    <Grid container spacing={3}>
+            <DialogContent dividers sx={{ p: 4, bgcolor: '#f8f9fc' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
 
-                        {/* Client Name */}
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField
-                                fullWidth
-                                label="Client Name"
-                                name="name"
-                                value={formData.name || ''}
-                                onChange={handleChange}
-                                error={!!errors.name}
-                                helperText={errors.name}
-                                required
-                            />
-                        </Grid>
+                    {/* Row 1 */}
+                    <InputCard label="Client Name" icon={<PersonIcon />}>
+                        <TextField
+                            fullWidth
+                            name="name"
+                            value={formData.name || ''}
+                            onChange={handleChange}
+                            error={!!errors.name}
+                            helperText={errors.name}
+                            placeholder="Enter client name"
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
 
-                        {/* Company */}
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField
-                                fullWidth
-                                label="Company"
-                                name="company"
-                                value={formData.company || ''}
-                                onChange={handleChange}
-                                error={!!errors.company}
-                                helperText={errors.company}
-                                required
-                            />
-                        </Grid>
+                    <InputCard label="Company" icon={<BusinessIcon />}>
+                        <TextField
+                            fullWidth
+                            name="company"
+                            value={formData.company || ''}
+                            onChange={handleChange}
+                            error={!!errors.company}
+                            helperText={errors.company}
+                            placeholder="Enter company name"
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
 
-                        {/* Email */}
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField
-                                fullWidth
-                                label="Email"
-                                name="email"
-                                type="email"
-                                value={formData.email || ''}
-                                onChange={handleChange}
-                                error={!!errors.email}
-                                helperText={errors.email}
-                                required
-                            />
-                        </Grid>
+                    {/* Row 2 */}
+                    <InputCard label="Email Address" icon={<EmailIcon />}>
+                        <TextField
+                            fullWidth
+                            name="email"
+                            type="email"
+                            value={formData.email || ''}
+                            onChange={handleChange}
+                            error={!!errors.email}
+                            helperText={errors.email}
+                            placeholder="Enter email address"
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
 
-                        {/* Phone */}
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <TextField
-                                fullWidth
-                                label="Phone"
-                                name="phone"
-                                value={formData.phone || ''}
-                                onChange={handleChange}
-                                error={!!errors.phone}
-                                helperText={errors.phone}
-                                required
-                            />
-                        </Grid>
+                    <InputCard label="Phone Number" icon={<PhoneIcon />}>
+                        <TextField
+                            fullWidth
+                            name="phone"
+                            value={formData.phone || ''}
+                            onChange={handleChange}
+                            error={!!errors.phone}
+                            helperText={errors.phone}
+                            placeholder="Enter phone number"
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
 
-                        {/* Status */}
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <FormControl fullWidth error={!!errors.status}>
-                                <InputLabel>Status</InputLabel>
-                                <Select
-                                    name="status"
-                                    value={formData.status || ''}
-                                    onChange={handleChange}
-                                    label="Status"
-                                >
-                                    {STATUS_OPTIONS.map((option) => (
-                                        <MenuItem key={option} value={option}>
-                                            {option}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
+                    {/* Row 3 */}
+                    <InputCard label="Status" icon={<StatusIcon />}>
+                        <TextField
+                            select
+                            fullWidth
+                            name="status"
+                            value={formData.status || ''}
+                            onChange={handleChange}
+                            error={!!errors.status}
+                            helperText={errors.status}
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        >
+                            {STATUS_OPTIONS.map((option) => (
+                                <MenuItem key={option} value={option}>
+                                    {option}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </InputCard>
 
-                        {/* Source */}
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <FormControl fullWidth error={!!errors.source}>
-                                <InputLabel>Source</InputLabel>
-                                <Select
-                                    name="source"
-                                    value={formData.source || ''}
-                                    onChange={handleChange}
-                                    label="Source"
-                                >
-                                    {SOURCE_OPTIONS.map((option) => (
-                                        <MenuItem key={option} value={option}>
-                                            {option}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
+                    <InputCard label="Source" icon={<SourceIcon />}>
+                        <TextField
+                            select
+                            fullWidth
+                            name="source"
+                            value={formData.source || ''}
+                            onChange={handleChange}
+                            error={!!errors.source}
+                            helperText={errors.source}
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        >
+                            {SOURCE_OPTIONS.map((option) => (
+                                <MenuItem key={option} value={option}>
+                                    {option}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </InputCard>
 
-                        {/* Assign */}
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <FormControl fullWidth error={!!errors.assignedTo}>
-                                <InputLabel>Assign To</InputLabel>
-                                <Select
-                                    name="assignedTo"
-                                    value={formData.assignedTo || ''}
-                                    onChange={handleChange}
-                                    label="Assign To"
-                                >
-                                    {ASSIGNED_TO_OPTIONS.map((option) => (
-                                        <MenuItem key={option} value={option}>
-                                            {option}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
+                    {/* Row 4 */}
+                    <InputCard label="Assign To" icon={<AssignedIcon />}>
+                        <TextField
+                            select
+                            fullWidth
+                            name="assignedTo"
+                            value={formData.assignedTo || ''}
+                            onChange={handleChange}
+                            error={!!errors.assignedTo}
+                            helperText={errors.assignedTo}
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        >
+                            {ASSIGNED_TO_OPTIONS.map((option) => (
+                                <MenuItem key={option} value={option}>
+                                    {option}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </InputCard>
 
-                        {/* Remarks */}
-                        <Grid size={{ xs: 12 }}>
-                            <TextField
-                                fullWidth
-                                label="Remarks"
-                                name="remarks"
-                                multiline
-                                rows={4}
-                                value={formData.remarks || ''}
-                                onChange={handleChange}
-                            />
-                        </Grid>
+                    {/* Remarks - Now in Row 4 Col 2 */}
+                    <InputCard label="Remarks" icon={<NotesIcon />}>
+                        <TextField
+                            fullWidth
+                            name="remarks"
+                            value={formData.remarks || ''}
+                            onChange={handleChange}
+                            placeholder="Enter remarks"
+                            variant="outlined"
+                            sx={{ '& .MuiInputBase-root': { height: '48px' } }}
+                        />
+                    </InputCard>
 
-                    </Grid>
                 </Box>
             </DialogContent>
 
             {/* Action Buttons */}
-            <Box sx={{
-                mt: 4,
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 2,
-                pt: 2,
-                borderTop: '1px solid #e2e8f0',
-                padding: '16px 24px'
-            }}>
+            <DialogActions sx={{ p: 3, px: 4, borderTop: '1px solid', borderColor: 'divider' }}>
                 <Button
                     onClick={onClose}
                     variant="outlined"
@@ -297,11 +342,10 @@ const LeadForm = ({ open, onClose, onSave, initialData, mode }) => {
                         borderRadius: '8px',
                         textTransform: 'none',
                         fontWeight: 600,
-                        color: '#64748b',
-                        borderColor: '#cbd5e1',
+                        borderColor: 'divider',
                         '&:hover': {
-                            backgroundColor: '#f1f5f9',
-                            borderColor: '#94a3b8'
+                            backgroundColor: 'action.hover',
+                            borderColor: 'divider'
                         }
                     }}
                 >
@@ -311,21 +355,22 @@ const LeadForm = ({ open, onClose, onSave, initialData, mode }) => {
                     onClick={handleSubmit}
                     variant="contained"
                     color="primary"
+                    disableElevation
                     sx={{
                         height: 44,
                         px: 4,
                         borderRadius: '8px',
                         textTransform: 'none',
                         fontWeight: 600,
-                        boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)',
+                        bgcolor: theme.palette.primary.main,
                         '&:hover': {
-                            boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.2)'
+                            bgcolor: theme.palette.primary.dark
                         }
                     }}
                 >
                     {mode === 'add' ? 'Add Lead' : 'Save Changes'}
                 </Button>
-            </Box>
+            </DialogActions>
         </Dialog>
     );
 };

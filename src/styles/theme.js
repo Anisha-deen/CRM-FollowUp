@@ -65,7 +65,7 @@ const theme = createTheme({
   },
 
   typography: {
-    fontFamily: '"Inter", system-ui, sans-serif',
+    fontFamily: '"Montserrat", system-ui, sans-serif',
 
     h4: { fontWeight: 700, color: "#000000" },
     h6: { fontWeight: 600, color: "#000000" },
@@ -90,15 +90,15 @@ const theme = createTheme({
 
     // 🔵 Header
     MuiAppBar: {
-  styleOverrides: {
-    root: {
-      backgroundColor: "#EDE8F5",   // ✅ same as background
-      color: "#0F172A",
-      borderBottom: "1px solid #D6D1E6",  // soft divider for this tone
-      boxShadow: "none",
+      styleOverrides: {
+        root: {
+          backgroundColor: "#EDE8F5",   // ✅ same as background
+          color: "#0F172A",
+          borderBottom: "1px solid #D6D1E6",  // soft divider for this tone
+          boxShadow: "none",
+        },
+      },
     },
-  },
-},
 
 
     // 🌸 Sidebar
