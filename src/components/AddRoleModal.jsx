@@ -16,30 +16,36 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-const PERMISSION_GROUPS = {
-    Organization: ['Manage Organization'],
-    Users: ['View Users', 'Create Users', 'Edit Users', 'Delete Users'],
-    Leads: ['View Leads', 'Create Leads', 'Edit Leads', 'Delete Leads'],
-    Followups: ['Manage Followups'],
-    Clients: ['Manage Clients'],
-    Budgets: ['View Budgets', 'Approve Budgets'],
-    Reports: ['View Reports'],
-    Settings: ['Manage Settings']
-};
+const AVAILABLE_PERMISSIONS = [
+    'Organization',
+    'Users',
+    'Leads',
+    'Followups',
+    'Clients',
+    'Budgets',
+    'Reports',
+    'Settings'
+];
 
-const AddRoleModal = ({ open, onClose, onSave }) => {
+const AddRoleModal = ({ open, onClose, onSave, roleToEdit }) => {
     const [roleName, setRoleName] = useState('');
     const [description, setDescription] = useState('');
     const [selectedPermissions, setSelectedPermissions] = useState([]);
 
-    // Reset state when opening
+    // Populate state when opening
     React.useEffect(() => {
         if (open) {
-            setRoleName('');
-            setDescription('');
-            setSelectedPermissions([]);
+            if (roleToEdit) {
+                setRoleName(roleToEdit.name);
+                setDescription(roleToEdit.description);
+                setSelectedPermissions(roleToEdit.permissions || []);
+            } else {
+                setRoleName('');
+                setDescription('');
+                setSelectedPermissions([]);
+            }
         }
-    }, [open]);
+    }, [open, roleToEdit]);
 
     const handlePermissionChange = (permission) => {
         setSelectedPermissions(prev =>
@@ -52,10 +58,11 @@ const AddRoleModal = ({ open, onClose, onSave }) => {
     const handleSave = () => {
         if (!roleName.trim()) return; // Basic validation
         onSave({
+            id: roleToEdit ? roleToEdit.id : undefined,
             name: roleName,
             description,
             permissions: selectedPermissions,
-            usersCount: 0 // New roles start with 0 users
+            usersCount: roleToEdit ? roleToEdit.usersCount : 0 // Preserve count if editing
         });
         onClose();
     };
@@ -79,7 +86,9 @@ const AddRoleModal = ({ open, onClose, onSave }) => {
                 alignItems: 'center',
                 pb: 1
             }}>
-                <Typography variant="h6" fontWeight={600}>Add New Role</Typography>
+                <Typography variant="h6" fontWeight={600}>
+                    {roleToEdit ? 'Edit Role' : 'Add New Role'}
+                </Typography>
                 <IconButton onClick={onClose} size="small">
                     <CloseIcon />
                 </IconButton>
@@ -110,81 +119,56 @@ const AddRoleModal = ({ open, onClose, onSave }) => {
 
                     <Divider textAlign="left">Permissions</Divider>
 
-                    {/* Permissions Grid - STRICT 3-COLUMN FIXED LAYOUT */}
+                    {/* Permissions Grid */}
                     <Box sx={{
-                        flexGrow: 1,
-                        overflowY: 'auto',
-                        pr: 1,
                         display: 'grid',
                         gridTemplateColumns: {
                             xs: '1fr',              // Mobile: 1 column
                             sm: 'repeat(2, 1fr)',   // Tablet: 2 columns
-                            md: 'repeat(3, 1fr)'    // Desktop: 3 columns (Strictly enforced)
+                            md: 'repeat(3, 1fr)'    // Desktop: 3 columns
                         },
-                        gap: 2, // 16px gap
-                        alignItems: 'start' // Prevent stretching
+                        gap: 2
                     }}>
-                        {/* 
-                           Explicit Render Order:
-                           Row 1: Organization, Users, Leads
-                           Row 2: Followups, Clients, Budgets
-                           Row 3: Reports, Settings, (empty)
-                        */}
-                        {['Organization', 'Users', 'Leads', 'Followups', 'Clients', 'Budgets', 'Reports', 'Settings'].map((group) => {
-                            const permissions = PERMISSION_GROUPS[group];
-                            if (!permissions) return null;
-
-                            return (
-                                <Box key={group} sx={{
+                        {AVAILABLE_PERMISSIONS.map((perm) => (
+                            <Box
+                                key={perm}
+                                onClick={() => handlePermissionChange(perm)}
+                                sx={{
                                     p: 2,
                                     borderRadius: '10px',
-                                    bgcolor: '#f4f6fb',
-                                    width: '100%',
-                                    height: '180px', // FIXED HEIGHT
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    border: '1px solid transparent',
-                                    boxSizing: 'border-box', // Ensure padding doesn't add to width
+                                    border: '1px solid',
+                                    borderColor: selectedPermissions.includes(perm) ? '#3D52A0' : 'divider',
+                                    bgcolor: selectedPermissions.includes(perm) ? 'rgba(61, 82, 160, 0.04)' : 'background.paper',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
                                     '&:hover': {
-                                        borderColor: 'primary.light',
-                                        bgcolor: '#eef2fa'
+                                        borderColor: '#3D52A0',
+                                        bgcolor: 'rgba(61, 82, 160, 0.04)'
+                                    },
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={selectedPermissions.includes(perm)}
+                                            onChange={() => handlePermissionChange(perm)}
+                                            sx={{
+                                                color: '#8697C4',
+                                                '&.Mui-checked': { color: '#3D52A0' }
+                                            }}
+                                        />
                                     }
-                                }}>
-                                    <Typography variant="subtitle2" fontWeight={700} gutterBottom sx={{ color: '#3D52A0', mb: 1.5 }}>
-                                        {group}
-                                    </Typography>
-                                    <Box sx={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 0.5,
-                                        flexGrow: 1,
-                                        overflowY: 'auto', // Internal scroll
-                                        '&::-webkit-scrollbar': { width: '4px' },
-                                        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: '4px' }
-                                    }}>
-                                        {permissions.map(perm => (
-                                            <FormControlLabel
-                                                key={perm}
-                                                control={
-                                                    <Checkbox
-                                                        size="small"
-                                                        checked={selectedPermissions.includes(perm)}
-                                                        onChange={() => handlePermissionChange(perm)}
-                                                        sx={{
-                                                            color: '#8697C4',
-                                                            '&.Mui-checked': { color: '#3D52A0' },
-                                                            py: 0.5
-                                                        }}
-                                                    />
-                                                }
-                                                label={<Typography variant="body2" sx={{ fontWeight: 500 }}>{perm}</Typography>}
-                                                sx={{ ml: -1, mr: 0, alignItems: 'flex-start', width: '100%' }}
-                                            />
-                                        ))}
-                                    </Box>
-                                </Box>
-                            );
-                        })}
+                                    label={
+                                        <Typography variant="body1" fontWeight={500} color={selectedPermissions.includes(perm) ? '#3D52A0' : 'text.primary'}>
+                                            {perm}
+                                        </Typography>
+                                    }
+                                    sx={{ m: 0, width: '100%', pointerEvents: 'none' }} // Pointer events handled by parent Box
+                                />
+                            </Box>
+                        ))}
                     </Box>
                 </Box>
             </DialogContent>
@@ -211,7 +195,7 @@ const AddRoleModal = ({ open, onClose, onSave }) => {
                         '&:hover': { bgcolor: '#2F3E80' }
                     }}
                 >
-                    Save Role
+                    {roleToEdit ? 'Update Role' : 'Save Role'}
                 </Button>
             </DialogActions>
         </Dialog>
