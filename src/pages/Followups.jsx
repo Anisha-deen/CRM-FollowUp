@@ -26,19 +26,82 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import PageContainer from '../components/PageContainer';
 import DataTableCard from '../components/DataTableCard';
 
+const API_URL = "http://localhost/client-CRM/followup_page.php";
+const LEADS_API_URL = "http://localhost/client-CRM/leads_page.php";
+const USERS_API_URL = "http://localhost/client-CRM/users_page.php";
+
+// MANUAL TOKEN (FOR NOW) - Same as Clients.jsx
+const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NzA4MDM4NDYsIm9yZ2FuaXphdGlvbl9ndWlkIjoiNDljNGMxMjItMDcxOC0xMWYxLTljNDItZTIxYWQ4ZjAyYjA0IiwiYWRtaW5fZ3VpZCI6IjQ5YzRjMWM2LTA3MTgtMTFmMS05YzQyLWUyMWFkOGYwMmIwNCIsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiQWRtaW4iLCJpc19hY3RpdmUiOjF9.haZqmTOMh4bBXS-3AhsCGxtfAqmTAm_pZqeA14o2izc";
+
+// const token = localStorage.getItem("token");
+
 const Followups = () => {
-    // Initialize with data from JSON
-    const [followups, setFollowups] = useState(followupsData);
+    // Initialize with empty array
+    const [followups, setFollowups] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [loading, setLoading] = useState(true);
 
-    // Simulate loading delay
-    useEffect(() => {
-        const timer = setTimeout(() => {
+    const [leads, setLeads] = useState([]);
+    const [users, setUsers] = useState([]);
+
+    const fetchFollowups = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(API_URL, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setFollowups(data.data);
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        } finally {
             setLoading(false);
-        }, 800);
-        return () => clearTimeout(timer);
+        }
+    };
+
+    const fetchLeads = async () => {
+        try {
+            const response = await fetch(LEADS_API_URL, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setLeads(data.data);
+            }
+        } catch (error) {
+            console.error("Leads fetch error:", error);
+        }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            // Using the new users_page.php endpoint
+            const response = await fetch(USERS_API_URL, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setUsers(data.data);
+            }
+        } catch (error) {
+            console.error("Users fetch error:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchFollowups();
+        fetchLeads();
+        fetchUsers();
     }, []);
 
     const [openModal, setOpenModal] = useState(false);
@@ -63,28 +126,86 @@ const Followups = () => {
         setCurrentFollowup(null);
     };
 
-    const handleSaveFollowup = (followupData) => {
-        if (currentFollowup) {
-            // Edit existing
-            setFollowups(followups.map(f => f.id === currentFollowup.id ? { ...f, ...followupData } : f));
-        } else {
-            // Add new
-            const newFollowup = {
-                ...followupData,
-                id: followups.length + 1,
-            };
-            setFollowups([...followups, newFollowup]);
+    const handleSaveFollowup = async (followupData) => {
+        try {
+            const method = "POST"; // Use POST for both Create and Update (PHP handles logic)
+
+            // If editing, include id/guid
+            const payload = { ...followupData };
+            if (currentFollowup) {
+                payload.id = currentFollowup.id;
+                payload.followup_guid = currentFollowup.followup_guid;
+            }
+
+            const response = await fetch(API_URL, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                fetchFollowups(); // Refresh list
+                handleCloseModal();
+            } else {
+                alert("Failed to save followup: " + (data.message || "Unknown error"));
+            }
+        } catch (error) {
+            console.error("Save error:", error);
+            alert("Error saving followup");
         }
-        handleCloseModal();
     };
 
-    const handleStatusChange = (id, newStatus) => {
-        setFollowups(followups.map(f => f.id === id ? { ...f, status: newStatus } : f));
+    const handleStatusChange = async (id, newStatus) => {
+        // Quick update via API
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST", // Using POST for update
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ id: id, status: newStatus }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                fetchFollowups();
+            } else {
+                alert("Failed to update status");
+            }
+
+        } catch (error) {
+            console.error("Status update error:", error);
+        }
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this follow-up?')) {
-            setFollowups(followups.filter(f => f.id !== id));
+            try {
+                const response = await fetch(API_URL + "?action=delete", { // Pass action=delete or handle in body
+                    method: "POST", // Using POST with action or DELETE method if server supports
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ id: id, action: 'delete' }), // Explicitly sending action in body too
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    fetchFollowups();
+                } else {
+                    alert("Failed to delete: " + (data.message || "Unknown error"));
+                }
+            } catch (error) {
+                console.error("Delete error:", error);
+            }
         }
     };
 
@@ -134,13 +255,13 @@ const Followups = () => {
                         <TableHead>
                             <TableRow sx={{ bgcolor: 'grey.100' }}>
                                 <TableCell sx={{ fontWeight: 600 }}>Lead Name</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Time</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Assigned To</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Outcome</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Type</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Date</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Time</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Status</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Assigned To</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Outcome</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -149,10 +270,10 @@ const Followups = () => {
                                 .map((row) => (
                                     <TableRow key={row.id} hover>
                                         <TableCell>{row.lead_name}</TableCell>
-                                        <TableCell>{row.type}</TableCell>
-                                        <TableCell>{row.date}</TableCell>
-                                        <TableCell>{row.time}</TableCell>
-                                        <TableCell>
+                                        <TableCell align="center">{row.type}</TableCell>
+                                        <TableCell align="center">{row.date}</TableCell>
+                                        <TableCell align="center">{row.time}</TableCell>
+                                        <TableCell align="center">
                                             <Chip
                                                 label={row.status}
                                                 size="small"
@@ -170,10 +291,10 @@ const Followups = () => {
                                                 }}
                                             />
                                         </TableCell>
-                                        <TableCell>{row.assigned_to}</TableCell>
-                                        <TableCell>{row.outcome}</TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex' }}>
+                                        <TableCell align="center">{row.assigned_to}</TableCell>
+                                        <TableCell align="center">{row.outcome}</TableCell>
+                                        <TableCell align="center">
+                                            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                                                 <IconButton
                                                     size="small"
                                                     color="primary"
@@ -221,6 +342,8 @@ const Followups = () => {
                 onClose={handleCloseModal}
                 onSave={handleSaveFollowup}
                 followup={currentFollowup}
+                leads={leads}
+                users={users}
             />
         </PageContainer>
     );

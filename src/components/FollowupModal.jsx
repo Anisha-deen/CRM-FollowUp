@@ -11,31 +11,35 @@ import {
     Box
 } from '@mui/material';
 
-const FollowupModal = ({ open, onClose, onSave, followup }) => {
+const FollowupModal = (props) => {
+    const { leads = [], users = [] } = props;
+    const { open, onClose, onSave, followup } = props;
+
     const [formData, setFormData] = useState({
-        lead_name: '',
+        lead_id: '', 
         type: 'Call',
         date: '',
         time: '',
         status: 'Pending',
-        assigned_to: '',
+        assigned_to: '', 
         outcome: ''
     });
 
     useEffect(() => {
         if (followup) {
             setFormData({
-                lead_name: followup.lead_name || '',
+                lead_id: followup.lead_id || '', 
+                lead_id: followup.lead_guid || '',
                 type: followup.type || 'Call',
                 date: followup.date || '',
                 time: followup.time || '',
                 status: followup.status || 'Pending',
-                assigned_to: followup.assigned_to || '',
+                assigned_to: followup.user_guid || '', 
                 outcome: followup.outcome || ''
             });
         } else {
             setFormData({
-                lead_name: '',
+                lead_id: '',
                 type: 'Call',
                 date: new Date().toISOString().split('T')[0],
                 time: '',
@@ -69,18 +73,31 @@ const FollowupModal = ({ open, onClose, onSave, followup }) => {
                 {followup ? 'Edit Follow-up' : 'New Follow-up'}
             </DialogTitle>
             <DialogContent dividers>
-                <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+                    <Box>
                         <TextField
+                            select
                             fullWidth
                             label="Lead Name"
-                            name="lead_name"
-                            value={formData.lead_name}
+                            name="lead_id"
+                            value={formData.lead_id}
                             onChange={handleChange}
                             variant="outlined"
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                            SelectProps={{
+                                MenuProps: {
+                                    PaperProps: { sx: { maxHeight: 300 } }
+                                }
+                            }}
+                        >
+                            {leads.map((lead) => (
+                                <MenuItem key={lead.lead_guid} value={lead.lead_guid}>
+                                    {lead.client_name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 2 }}>
                         <TextField
                             select
                             fullWidth
@@ -89,13 +106,13 @@ const FollowupModal = ({ open, onClose, onSave, followup }) => {
                             value={formData.type}
                             onChange={handleChange}
                             variant="outlined"
+                            sx={{ flex: 1 }}
                         >
                             <MenuItem value="Call">Call</MenuItem>
                             <MenuItem value="Email">Email</MenuItem>
                             <MenuItem value="Meeting">Meeting</MenuItem>
                         </TextField>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+
                         <TextField
                             select
                             fullWidth
@@ -104,14 +121,16 @@ const FollowupModal = ({ open, onClose, onSave, followup }) => {
                             value={formData.status}
                             onChange={handleChange}
                             variant="outlined"
+                            sx={{ flex: 1 }}
                         >
                             <MenuItem value="Pending">Pending</MenuItem>
                             <MenuItem value="Completed">Completed</MenuItem>
                             <MenuItem value="Missed">Missed</MenuItem>
                             <MenuItem value="Scheduled">Scheduled</MenuItem>
                         </TextField>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 2 }}>
                         <TextField
                             fullWidth
                             type="date"
@@ -121,9 +140,8 @@ const FollowupModal = ({ open, onClose, onSave, followup }) => {
                             onChange={handleChange}
                             InputLabelProps={{ shrink: true }}
                             variant="outlined"
+                            sx={{ flex: 1 }}
                         />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
                         <TextField
                             fullWidth
                             type="time"
@@ -133,19 +151,34 @@ const FollowupModal = ({ open, onClose, onSave, followup }) => {
                             onChange={handleChange}
                             InputLabelProps={{ shrink: true }}
                             variant="outlined"
+                            sx={{ flex: 1 }}
                         />
-                    </Grid>
-                    <Grid item xs={12}>
+                    </Box>
+
+                    <Box>
                         <TextField
+                            select
                             fullWidth
                             label="Assigned To"
                             name="assigned_to"
                             value={formData.assigned_to}
                             onChange={handleChange}
                             variant="outlined"
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
+                            SelectProps={{
+                                MenuProps: {
+                                    PaperProps: { sx: { maxHeight: 300 } }
+                                }
+                            }}
+                        >
+                            {users.map((user) => (
+                                <MenuItem key={user.user_guid} value={user.user_guid}>
+                                    {user.name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </Box>
+
+                    <Box>
                         <TextField
                             fullWidth
                             multiline
@@ -156,8 +189,8 @@ const FollowupModal = ({ open, onClose, onSave, followup }) => {
                             onChange={handleChange}
                             variant="outlined"
                         />
-                    </Grid>
-                </Grid>
+                    </Box>
+                </Box>
             </DialogContent>
             <DialogActions sx={{ p: 2.5 }}>
                 <Button onClick={onClose} color="inherit">

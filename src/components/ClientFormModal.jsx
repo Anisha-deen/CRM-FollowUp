@@ -24,7 +24,7 @@ import {
 
 const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, mode }) => {
     const [formData, setFormData] = useState({
-        lead_id: '',
+        lead_guid: '',
         contract_file: '',
         start_date: new Date().toISOString().split('T')[0]
     });
@@ -35,13 +35,13 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
         if (open) {
             if (mode === 'edit' && initialData) {
                 setFormData({
-                    lead_id: initialData.lead_id,
-                    contract_file: initialData.contract_file || 'Financial_Report.pdf', // Default mock for demo
+                    lead_guid: initialData.lead_guid,
+                    contract_file: initialData.contract_file || 'Financial_Report.pdf',
                     start_date: initialData.start_date
                 });
             } else {
                 setFormData({
-                    lead_id: '',
+                    lead_guid: '',
                     contract_file: '',
                     start_date: new Date().toISOString().split('T')[0]
                 });
@@ -61,26 +61,37 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setFormData(prev => ({ ...prev, contract_file: file.name }));
+            setFormData(prev => ({ ...prev, contract_file: file }));
         }
     };
 
     const handleSubmit = () => {
-        if (formData.lead_id && formData.start_date) {
+        if (formData.lead_guid && formData.start_date) {
             onSave(formData);
         } else {
             alert('Please select a lead and start date.');
         }
     };
 
-    // Filter available leads logic (kept same as before)
+    // Filter available leads logic
     const availableLeads = leads.filter(lead => {
-        const isClient = clients.some(c => c.lead_id === lead.id);
-        if (mode === 'edit' && initialData) {
-            return !isClient || lead.id === initialData.lead_id;
+        
+        if (mode === 'edit' && initialData && lead.lead_guid === initialData.lead_guid) {
+            return true;
         }
-        return !isClient;
+       
+        return !clients.some(c => c.lead_guid === lead.lead_guid);
     });
+
+    // Helper to get display name
+    const getFileName = () => {
+        if (!formData.contract_file) return '';
+        if (formData.contract_file instanceof File) return formData.contract_file.name;
+        
+        return typeof formData.contract_file === 'string'
+            ? formData.contract_file.split('/').pop()
+            : '';
+    };
 
     return (
         <Dialog
@@ -118,8 +129,8 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
                                     select
                                     fullWidth
                                     label={mode === 'add' ? "Select Lead *" : "Selected Lead"}
-                                    name="lead_id"
-                                    value={formData.lead_id}
+                                    name="lead_guid"
+                                    value={formData.lead_guid}
                                     onChange={handleChange}
                                     required
                                     disabled={mode === 'edit'}
@@ -129,8 +140,8 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
                                             if (!selected) {
                                                 return <Typography color="text.secondary">Search by name or company...</Typography>;
                                             }
-                                            const lead = leads.find(l => l.id === selected);
-                                            return lead ? `${lead.client_name} - ${lead.company}` : selected;
+                                            const lead = leads.find(l => l.lead_guid === selected);
+                                            return lead ? `${lead.client_name} - ${lead.company_name || lead.company}` : selected;
                                         }
                                     }}
                                     InputProps={{
@@ -144,8 +155,8 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
                                 >
                                     {availableLeads.length > 0 ? (
                                         availableLeads.map((lead) => (
-                                            <MenuItem key={lead.id} value={lead.id}>
-                                                {lead.client_name} - {lead.company} ({lead.status})
+                                            <MenuItem key={lead.lead_guid} value={lead.lead_guid}>
+                                                {lead.client_name} - {lead.company_name || lead.company} ({lead.status})
                                             </MenuItem>
                                         ))
                                     ) : (
@@ -213,7 +224,7 @@ const ClientFormModal = ({ open, onClose, onSave, leads, clients, initialData, m
                                 <>
                                     <FileIcon color="primary" sx={{ fontSize: 40, mb: 1 }} />
                                     <Typography variant="subtitle1" fontWeight={600}>
-                                        {formData.contract_file}
+                                        {getFileName()}
                                     </Typography>
                                     <Typography variant="body2" color="primary">
                                         Click to replace file

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Dialog,
     Typography,
@@ -9,7 +9,8 @@ import {
     Button,
     Divider,
     useMediaQuery,
-    useTheme
+    useTheme,
+    CircularProgress
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -17,9 +18,50 @@ import {
     Edit as EditIcon
 } from '@mui/icons-material';
 
+// 🔥 MANUAL TOKEN 
+const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NzA4MDM4NDYsIm9yZ2FuaXphdGlvbl9ndWlkIjoiNDljNGMxMjItMDcxOC0xMWYxLTljNDItZTIxYWQ4ZjAyYjA0IiwiYWRtaW5fZ3VpZCI6IjQ5YzRjMWM2LTA3MTgtMTFmMS05YzQyLWUyMWFkOGYwMmIwNCIsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiQWRtaW4iLCJpc19hY3RpdmUiOjF9.haZqmTOMh4bBXS-3AhsCGxtfAqmTAm_pZqeA14o2izc";
+
+const API_URL = "http://localhost/client-CRM/clients_page.php";
+
 const ClientDetailsModal = ({ open, onClose, client, onEdit }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const [downloading, setDownloading] = useState(false);
+
+    const handleDownload = async (fileUrl, fileName) => {
+        try {
+            setDownloading(true);
+
+            // Extract filename from path
+            const actualFileName = fileUrl.split('/').pop();
+
+            const response = await fetch(`${API_URL}?action=download&file=${actualFileName}`, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("Download failed");
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName); 
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Download error:", error);
+            alert("Failed to download file");
+        } finally {
+            setDownloading(false);
+        }
+    };
 
     if (!client) return null;
 
@@ -84,9 +126,9 @@ const ClientDetailsModal = ({ open, onClose, client, onEdit }) => {
 
             {/* Status Chip */}
             <Chip
-                label={client.lead_status || 'Active'}
+                label={client.status || 'Active'}
                 sx={{
-                    bgcolor: client.lead_status === 'Closed Won' ? "#16A34A" : "#3D52A0",
+                    bgcolor: client.status === 'Closed Won' ? "#16A34A" : "#3D52A0",
                     color: "#fff",
                     fontWeight: 600,
                     mb: 2
@@ -99,7 +141,7 @@ const ClientDetailsModal = ({ open, onClose, client, onEdit }) => {
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                {client.company}
+                {client.company_name}
             </Typography>
 
             <Divider sx={{ mb: 4 }} />
@@ -185,7 +227,7 @@ const ClientDetailsModal = ({ open, onClose, client, onEdit }) => {
 
                         <Box sx={{ overflow: 'hidden' }}>
                             <Typography fontWeight={600} noWrap>
-                                {client.contract_file || 'No file attached'}
+                                {client.contract_file ? client.contract_file.split('/').pop() : 'No file attached'}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                                 Contract File
@@ -196,13 +238,16 @@ const ClientDetailsModal = ({ open, onClose, client, onEdit }) => {
                     {client.contract_file && (
                         <Button
                             variant="outlined"
+                            onClick={() => handleDownload(client.contract_file, client.contract_file.split('/').pop())}
+                            disabled={downloading}
+                            startIcon={downloading ? <CircularProgress size={20} /> : null}
                             sx={{
                                 borderRadius: 2,
                                 textTransform: "none",
                                 width: { xs: '100%', sm: 'auto' }
                             }}
                         >
-                            Download
+                            {downloading ? "Downloading..." : "Download"}
                         </Button>
                     )}
                 </Box>
