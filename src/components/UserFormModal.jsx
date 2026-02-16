@@ -27,15 +27,9 @@ import {
     Close as CloseIcon
 } from '@mui/icons-material';
 
-const ROLES = [
-    'Super Admin',
-    'Admin',
-    'Manager',
-    'Telecaller',
-    'Finance'
-];
+// Default fallback ROLES removed as we use the roles prop
 
-const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
+const UserFormModal = ({ open, onClose, onSave, initialData, mode, roles = [] }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -43,7 +37,7 @@ const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
         name: '',
         email: '',
         password: '',
-        role: '',
+        role_guid: '',
         status: 'Active'
     });
 
@@ -56,7 +50,7 @@ const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
                     name: initialData.name || '',
                     email: initialData.email || '',
                     password: '', // Password not shown on edit
-                    role: initialData.role || '',
+                    role_guid: initialData.role_guid || '',
                     status: initialData.status || 'Active'
                 });
             } else {
@@ -64,7 +58,7 @@ const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
                     name: '',
                     email: '',
                     password: '',
-                    role: '',
+                    role_guid: '',
                     status: 'Active'
                 });
             }
@@ -95,7 +89,7 @@ const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
             newErrors.password = 'Password is required';
         }
 
-        if (!formData.role) newErrors.role = 'Role is required';
+        if (!formData.role_guid) newErrors.role_guid = 'Role is required';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -230,8 +224,8 @@ const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
                             onChange={handleChange}
                             error={!!errors.password}
                             helperText={errors.password}
-                            disabled={mode === 'edit'}
-                            placeholder={mode === 'edit' ? '(Unchanged)' : ''}
+                            disabled={false}
+                            placeholder={mode === 'edit' ? 'Leave blank to keep current' : ''}
                             variant="outlined"
                             sx={{ '& .MuiInputBase-root': { height: '48px' } }}
                         />
@@ -239,19 +233,24 @@ const UserFormModal = ({ open, onClose, onSave, initialData, mode }) => {
 
                     {/* Row 2 Col 2: Role */}
                     <InputCard label="Role" icon={<RoleIcon />}>
-                        <FormControl fullWidth error={!!errors.role}>
+                        <FormControl fullWidth error={!!errors.role_guid}>
                             <Select
-                                name="role"
-                                value={formData.role}
+                                name="role_guid"
+                                value={formData.role_guid}
                                 onChange={handleChange}
                                 sx={{ height: '48px' }}
                             >
-                                {ROLES.map((role) => (
-                                    <MenuItem key={role} value={role}>
-                                        {role}
+                                {roles.map((r) => (
+                                    <MenuItem key={r.role_guid} value={r.role_guid}>
+                                        {r.role_name}
                                     </MenuItem>
                                 ))}
                             </Select>
+                            {errors.role_guid && (
+                                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                                    {errors.role_guid}
+                                </Typography>
+                            )}
                         </FormControl>
                     </InputCard>
 

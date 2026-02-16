@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Box, useMediaQuery, Typography, Collapse } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -6,14 +6,16 @@ import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import BusinessIcon from '@mui/icons-material/Business';
-import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
 import SecurityIcon from '@mui/icons-material/Security';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
+import { useAuth } from '../context/AuthContext';
 
-const drawerWidth = 240; // Standard consolidated width
+const drawerWidth = 240;
 
 const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -21,6 +23,7 @@ const menuItems = [
     { text: 'Followups', icon: <AssignmentIcon />, path: '/followups' },
     { text: 'Budgets', icon: <MonetizationOnIcon />, path: '/budgets' },
     { text: 'Clients', icon: <BusinessIcon />, path: '/clients' },
+    { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
     { text: 'Organization', icon: <BusinessIcon />, path: '/organization' },
     {
         text: 'Roles & Permissions',
@@ -29,22 +32,50 @@ const menuItems = [
             { text: 'Users', path: '/users' },
             { text: 'Roles', path: '/roles' }
         ]
-    }
+    },
+
 ];
 
 const Sidebar = ({ isOpen, handleDrawerToggle }) => {
     const location = useLocation();
     const theme = useTheme();
+    const { user } = useAuth();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-    const ismobile = useMediaQuery(theme.breakpoints.up('xs'));
 
-    // State for collapsible menus
     const [openSubmenu, setOpenSubmenu] = useState({});
+
+    // Filter menu items based on permissions
+    const filteredMenuItems = useMemo(() => {
+        if (!user) return [];
+
+        const hasAccess = (moduleName) => {
+            // Super Admin and Admin have access to everything
+            if (user.role === 'Super Admin' || user.role === 'Admin') return true;
+
+            // Check permissions array from backend
+            // user.permissions: Array of { module: string, view: number, ... }
+            return user.permissions?.some(p =>
+                p.module.toLowerCase() === moduleName.toLowerCase() &&
+                (parseInt(p.view) === 1 || parseInt(p.full_access) === 1)
+            );
+        };
+
+        return menuItems.map(item => {
+            if (item.children) {
+                const filteredChildren = item.children.filter(child => hasAccess(child.text));
+                if (filteredChildren.length > 0) {
+                    return { ...item, children: filteredChildren };
+                }
+                return null;
+            }
+            return hasAccess(item.text) ? item : null;
+        }).filter(item => item !== null);
+    }, [user]);
 
     // Auto-expand menu if on a child route
     useEffect(() => {
         const newOpenState = { ...openSubmenu };
-        menuItems.forEach(item => {
+        filteredMenuItems.forEach(item => {
             if (item.children) {
                 const isChildActive = item.children.some(child => location.pathname.startsWith(child.path));
                 if (isChildActive) {
@@ -53,8 +84,7 @@ const Sidebar = ({ isOpen, handleDrawerToggle }) => {
             }
         });
         setOpenSubmenu(newOpenState);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.pathname]);
+    }, [location.pathname, filteredMenuItems]);
 
     const handleSubmenuClick = (text) => {
         setOpenSubmenu((prev) => ({ ...prev, [text]: !prev[text] }));
@@ -62,18 +92,8 @@ const Sidebar = ({ isOpen, handleDrawerToggle }) => {
 
     const renderMenuItem = (item) => {
         const isParent = !!item.children;
-        const isOpen = openSubmenu[item.text] || false;
-
-        // Active state logic
-        let isActive = false;
-        if (isParent) {
-            // Parent is active if any child is active (handled by auto-expand mostly, but strictly speaking parent doesn't navigate)
-            // We usually don't highlight the parent as "active" in the same way, but we can if desired.
-            // Requirement says: "Roles & Permissions parent must remain expanded" - handled by state.
-            // "Active child item must show highlight" - handled by child rendering.
-        } else {
-            isActive = location.pathname.startsWith(item.path);
-        }
+        const subOpen = openSubmenu[item.text] || false;
+        const isActive = isParent ? false : location.pathname.startsWith(item.path);
 
         return (
             <React.Fragment key={item.text}>
@@ -90,25 +110,17 @@ const Sidebar = ({ isOpen, handleDrawerToggle }) => {
                             mb: 0.5,
                             transition: 'all 0.2s ease-in-out',
                             '&.Mui-selected': {
-                                backgroundColor: theme.palette.sidebar.activeBg,
-                                color: theme.palette.sidebar.activeText,
+                                backgroundColor: theme.palette.sidebar?.activeBg || alpha(theme.palette.primary.main, 0.1),
+                                color: theme.palette.sidebar?.activeText || theme.palette.primary.main,
                                 '&:hover': {
-                                    backgroundColor: alpha(theme.palette.sidebar.activeBg, 0.8),
+                                    backgroundColor: alpha(theme.palette.primary.main, 0.15),
                                 },
-                            },
-                            '&:hover': {
-                                backgroundColor: alpha(theme.palette.text.primary, 0.04),
-                                color: theme.palette.text.primary,
                             },
                         }}
                     >
                         <ListItemIcon sx={{
                             minWidth: 42,
                             color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
-                            transition: 'color 0.2s',
-                            '& .MuiSvgIcon-root': {
-                                fontSize: '1.4rem'
-                            }
                         }}>
                             {item.icon}
                         </ListItemIcon>
@@ -119,12 +131,12 @@ const Sidebar = ({ isOpen, handleDrawerToggle }) => {
                                 fontSize: '0.95rem',
                             }}
                         />
-                        {isParent && (isOpen ? <ExpandLess sx={{ color: 'text.secondary' }} /> : <ExpandMore sx={{ color: 'text.secondary' }} />)}
+                        {isParent && (subOpen ? <ExpandLess /> : <ExpandMore />)}
                     </ListItemButton>
                 </ListItem>
 
                 {isParent && (
-                    <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                    <Collapse in={subOpen} timeout="auto" unmountOnExit>
                         <List component="div" disablePadding>
                             {item.children.map((child) => {
                                 const isChildActive = location.pathname.startsWith(child.path);
@@ -137,30 +149,20 @@ const Sidebar = ({ isOpen, handleDrawerToggle }) => {
                                             selected={isChildActive}
                                             sx={{
                                                 borderRadius: '12px',
-                                                pl: 4, // Indentation
-                                                pr: 2,
-                                                py: 1, // Smaller spacing
+                                                pl: 4,
+                                                py: 1,
                                                 mb: 0.5,
-                                                transition: 'all 0.2s ease-in-out',
                                                 '&.Mui-selected': {
-                                                    backgroundColor: alpha('#3D52A0', 0.1), // specific theme highlight for child
-                                                    color: '#3D52A0',
-                                                    '&:hover': {
-                                                        backgroundColor: alpha('#3D52A0', 0.15),
-                                                    },
-                                                },
-                                                '&:hover': {
-                                                    backgroundColor: alpha(theme.palette.text.primary, 0.04),
-                                                    color: theme.palette.text.primary,
-                                                },
+                                                    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                                    color: theme.palette.primary.main,
+                                                }
                                             }}
                                         >
                                             <ListItemText
                                                 primary={child.text}
                                                 primaryTypographyProps={{
                                                     fontWeight: isChildActive ? 600 : 500,
-                                                    fontSize: '0.9rem', // Slightly smaller font
-                                                    fontFamily: 'Montserrat', // Ensure font family inheritance or explicit
+                                                    fontSize: '0.9rem',
                                                 }}
                                             />
                                         </ListItemButton>
@@ -178,13 +180,11 @@ const Sidebar = ({ isOpen, handleDrawerToggle }) => {
         <Box sx={{
             height: '100%',
             backgroundColor: theme.palette.background.default,
-            color: 'text.secondary',
             display: 'flex',
             flexDirection: 'column',
             borderRight: '1px solid',
             borderColor: 'divider',
         }}>
-            {/* Sidebar Branding / Logo */}
             <Box sx={{
                 height: 64,
                 display: 'flex',
@@ -205,41 +205,17 @@ const Sidebar = ({ isOpen, handleDrawerToggle }) => {
                     color: 'common.white',
                     fontWeight: 800,
                     fontSize: '1.2rem',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 }}>
                     C
                 </Box>
-                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: 'text.primary', letterSpacing: '-0.01em' }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: 'text.primary' }}>
                     CRM SYSTEM
                 </Typography>
             </Box>
 
-            {/* Navigation Items */}
-            <Box sx={{
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                py: 3,
-                px: 2,
-                flexGrow: 1,
-                // Fix for layout shift when scrollbar appears
-                scrollbarGutter: 'stable',
-                // Custom thin scrollbar for professional look
-                '&::-webkit-scrollbar': {
-                    width: '6px',
-                },
-                '&::-webkit-scrollbar-track': {
-                    background: 'transparent',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: alpha(theme.palette.text.secondary, 0.1),
-                    borderRadius: '3px',
-                },
-                '&::-webkit-scrollbar-thumb:hover': {
-                    backgroundColor: alpha(theme.palette.text.secondary, 0.3),
-                }
-            }}>
+            <Box sx={{ overflowY: 'auto', py: 3, px: 2, flexGrow: 1 }}>
                 <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    {menuItems.map((item) => renderMenuItem(item))}
+                    {filteredMenuItems.map((item) => renderMenuItem(item))}
                 </List>
             </Box>
         </Box>

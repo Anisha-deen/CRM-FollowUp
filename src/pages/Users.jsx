@@ -32,20 +32,18 @@ import UserFormModal from '../components/UserFormModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import { useAuth } from '../context/AuthContext';
-import usersData from '../data/users.json'; // Initial mock data
+import { userApi } from '../api/userApi';
+import { roleApi } from '../api/roleApi';
 
-const USERS_KEY = 'crm_users_data_v2';
+
 
 const Users = () => {
     const theme = useTheme();
     const { user } = useAuth(); // Current logged-in user
 
     // ... (rest of state initialization)
-    const [users, setUsers] = useState(() => {
-        const saved = localStorage.getItem(USERS_KEY);
-        // Force refresh if saving from old key or data mismatch (simplified by just changing key)
-        return saved ? JSON.parse(saved) : usersData;
-    });
+    const [users, setUsers] = useState([]);
+    const [roles, setRoles] = useState([]);
 
     const [openModal, setOpenModal] = useState(false);
     const [modalMode, setModalMode] = useState('add'); // 'add' | 'edit'
@@ -55,18 +53,48 @@ const Users = () => {
     const [deleteId, setDeleteId] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Simulate loading delay
+    // Load Users
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 800);
-        return () => clearTimeout(timer);
+        loadUsers();
+        loadRoles();
     }, []);
 
-    // ... (useEffect and handlers)
-    useEffect(() => {
-        localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    }, [users]);
+    const loadRoles = async () => {
+        try {
+            const data = await roleApi.getAll();
+            if (data.success) {
+                setRoles(data.data || []);
+            }
+        } catch (error) {
+            console.error("Failed to load roles", error);
+        }
+    };
+
+    const loadUsers = async () => {
+        setLoading(true);
+        try {
+            const data = await userApi.getAll();
+            if (data.success && Array.isArray(data.data)) {
+                // Map to frontend structure
+                // Backend: user_guid, name, email, role_name, role_guid, status, is_active
+                const mappedPoints = data.data.map(u => ({
+                    id: u.user_guid,
+                    name: u.name,
+                    email: u.email,
+                    role: u.role_name || 'User',
+                    role_guid: u.role_guid,
+                    status: u.status || (u.is_active == 1 ? 'Active' : 'Inactive'),
+                    user_guid: u.user_guid,
+                    organization_guid: u.organization_guid
+                }));
+                setUsers(mappedPoints);
+            }
+        } catch (error) {
+            console.error("Failed to load users", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleAddClick = () => {
         setModalMode('add');
@@ -85,27 +113,41 @@ const Users = () => {
         setOpenConfirm(true);
     };
 
-    const handleSaveUser = (formData) => {
-        if (modalMode === 'add') {
-            const newUser = {
-                id: Date.now(), // Simple ID generation
-                ...formData
-            };
-            setUsers([...users, newUser]);
-        } else {
-            setUsers(users.map(u => u.id === currentUser.id ? { ...u, ...formData } : u));
+    const handleSaveUser = async (formData) => {
+        try {
+            // formData comes from UserFormModal. Needs to match backend expectations.
+            // Backend expects: name, email, role_guid, status, is_active, password (if new)
+
+            if (modalMode === 'add') {
+                await userApi.create(formData);
+            } else {
+                // formData might not contain user_guid, we need it from currentUser
+                await userApi.update(currentUser.user_guid, formData);
+            }
+            loadUsers();
+            setOpenModal(false);
+        } catch (error) {
+            console.error("Failed to save user", error);
+            alert("Error saving user: " + (error.response?.data?.error || error.message));
         }
-        setOpenModal(false);
     };
 
-    const handleConfirmDelete = () => {
-        setUsers(users.filter(u => u.id !== deleteId));
-        setOpenConfirm(false);
-        setDeleteId(null);
+    const handleConfirmDelete = async () => {
+        if (deleteId) {
+            try {
+                await userApi.delete(deleteId);
+                loadUsers();
+            } catch (error) {
+                console.error("Failed to delete user", error);
+                alert("Error deleting user");
+            }
+            setOpenConfirm(false);
+            setDeleteId(null);
+        }
     };
 
     // Role-based UI logic
-    const canAddUser = user?.role === 'Super Admin';
+    const canAddUser = user?.role === 'Super Admin' || user?.role === 'Admin';
     const canEditDelete = user?.role === 'Super Admin' || user?.role === 'Admin';
     if (loading) {
         return <LoadingSpinner loading={true} mode="centered" message="Loading follow-ups..." />
@@ -242,6 +284,7 @@ const Users = () => {
                 onSave={handleSaveUser}
                 initialData={currentUser}
                 mode={modalMode}
+                roles={roles}
             />
 
             <ConfirmationDialog
